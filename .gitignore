@@ -1,0 +1,15 @@
+node_modules/
+.env
+.vercel/
+dist/
+build/
+*.log
+backend_ui_findings.txt
+find_extra_refs.txt
+package_search.txt
+root_listing.txt
+scan_results.txt
+ts_files.txt
+tsconfig_findings.txt
+check_users.js
+reset_admin.js
