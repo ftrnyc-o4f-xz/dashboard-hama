@@ -79,9 +79,23 @@ app.use(`/api${config.apiPrefix}/detections`, detectionsRoutes);
 app.use(`/api${config.apiPrefix}/analysis`, analysisRoutes);
 
 /* =========================
+   ERROR HANDLERS
+========================= */
+process.on('uncaughtException', (err) => {
+    console.error('❌ UNCAUGHT EXCEPTION:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ UNHANDLED REJECTION at:', promise, 'reason:', reason);
+});
+
+/* =========================
    START SERVER
 ========================= */
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server is UP and listening on PORT: ${PORT}`);
+    console.log(`\n\n*****************************************`);
+    console.log(`🚀 SITANI-SMART-V6 IS LIVE!`);
+    console.log(`📡 PORT: ${PORT} | HOST: 0.0.0.0`);
+    console.log(`*****************************************\n`);
 });
