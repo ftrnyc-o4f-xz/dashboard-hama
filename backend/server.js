@@ -84,7 +84,7 @@ app.use(`/api${config.apiPrefix}/analysis`, analysisRoutes);
 /* =========================
    START SERVER
 ========================= */
-const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+const PORT = process.env.PORT || 3000; // Railway standard fallback is usually 3000 or 8080
+httpServer.listen(PORT, () => {
+    console.log(`🚀 Server is UP and listening on PORT: ${PORT}`);
 });
