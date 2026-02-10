@@ -8,13 +8,17 @@ import { setupMqtt } from "./mqttHandler.js";
 
 const app = express();
 
+const allowedOrigins = [
+    "https://dashboard-hama.vercel.app",
+    "https://dahsboard-hama.vercel.app",
+    "http://localhost:5173"
+];
+
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    // Sangat Agresif: Izinkan semua domain .vercel.app, localhost, atau domain Railway sendiri
-    if (origin && (origin.endsWith(".vercel.app") || origin.includes("localhost") || origin.includes("railway.app"))) {
+    if (origin && (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app") || origin.includes("localhost"))) {
         res.setHeader("Access-Control-Allow-Origin", origin);
     } else {
-        // Fallback jika tidak ada origin (misal request server-to-server)
         res.setHeader("Access-Control-Allow-Origin", "*");
     }
 
@@ -22,7 +26,6 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept");
 
-    // Tangani OPTIONS (Pre-flight) secara instan dengan status 200
     if (req.method === "OPTIONS") {
         return res.status(200).end();
     }
@@ -39,11 +42,17 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
     cors: {
-        origin: allowedOrigins,
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+                callback(null, true);
+            } else {
+                callback(null, true); // Permissive for debug, can be tightened later
+            }
+        },
         methods: ["GET", "POST"],
         credentials: true
     },
-    transports: ["polling", "websocket"] // Match frontend
+    transports: ["polling", "websocket"]
 });
 
 /* =========================
