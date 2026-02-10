@@ -20,16 +20,24 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin) return callback(null, true); // allow server-to-server
+        if (!origin) return callback(null, true);
         if (allowedOrigins.includes(origin)) {
             return callback(null, true);
         }
-        return callback(new Error("CORS not allowed"), false);
+        return callback(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
 }));
+
+// Manual OPTIONS handler (Safety net without wildcards)
+app.use((req, res, next) => {
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(200);
+    }
+    next();
+});
 
 app.use(express.json());
 
