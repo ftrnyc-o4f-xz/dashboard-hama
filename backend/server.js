@@ -13,6 +13,7 @@ const app = express();
 ========================= */
 const allowedOrigins = [
     "https://dashboard-hama.vercel.app",
+    "https://dahsboard-hama.vercel.app",
     "http://localhost:5173"
 ];
 
