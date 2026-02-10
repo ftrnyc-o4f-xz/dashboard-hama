@@ -15,11 +15,6 @@ import {
 
 import { WS_URL } from "./config";
 
-// Initialize socket outside or inside? Outside is fine but inside is safer for some react-router setups
-const socket = io(WS_URL, {
-  transports: ["websocket", "polling"]
-});
-
 function App() {
   const [auth, setAuth] = useState(() => {
     try {
@@ -42,13 +37,24 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
+    if (!auth) return;
+
+    const socket = io(WS_URL, {
+      transports: ["websocket", "polling"]
+    });
+
     const onAlert = (data) => {
       console.log("Hama Alert received:", data);
       setNotification(data);
     };
+
     socket.on("hama-alert", onAlert);
-    return () => socket.off("hama-alert", onAlert);
-  }, []);
+
+    return () => {
+      socket.off("hama-alert", onAlert);
+      socket.disconnect();
+    };
+  }, [auth]);
 
   const handleLogout = () => {
     localStorage.clear();
