@@ -5,6 +5,9 @@ import { Server } from "socket.io";
 import { connectDB } from "./db/mongoose.js";
 import config from "./config/index.js";
 import { setupMqtt } from "./mqttHandler.js";
+import authRoutes from "./src/routes/auth.routes.js";
+import detectionsRoutes from "./src/routes/detections.routes.js";
+import analysisRoutes from "./src/routes/analysis.routes.js";
 
 const app = express();
 
@@ -14,17 +17,15 @@ const allowedOrigins = [
     "http://localhost:5173"
 ];
 
-// 1. PINDAHKAN CORS KE PALING ATAS
+// 1. CORS & Preflight Handler
 app.use((req, res, next) => {
     const origin = req.headers.origin;
     console.log(`>>> [${req.method}] ${req.url} | Origin: ${origin}`);
 
-    // Refleksikan origin jika ada dalam daftar atau dari vercel
     if (origin && (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app") || origin.includes("localhost"))) {
         res.setHeader("Access-Control-Allow-Origin", origin);
     } else {
-        // Jika tidak ada origin, tetap beri header agar tidak diblokir browser
-        res.setHeader("Access-Control-Allow-Origin", origin || "*");
+        res.setHeader("Access-Control-Allow-Origin", "https://dashboard-hama.vercel.app");
     }
 
     res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -37,9 +38,9 @@ app.use((req, res, next) => {
     next();
 });
 
-// 2. HEALTH CHECK DI BAWAH CORS
+// 2. Health Check
 app.get("/", (req, res) => {
-    res.json({ status: "Backend SiTani Smart is Running! 🚀" });
+    res.json({ status: "Backend SiTani Smart is Running! 🚀", timestamp: new Date() });
 });
 
 app.use(express.json());
@@ -55,7 +56,7 @@ const io = new Server(httpServer, {
             if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
                 callback(null, true);
             } else {
-                callback(null, true); // Permissive for debug, can be tightened later
+                callback(null, true);
             }
         },
         methods: ["GET", "POST"],
@@ -73,10 +74,6 @@ setupMqtt(io);
 /* =========================
    ROUTES
 ========================= */
-import authRoutes from "./src/routes/auth.routes.js";
-import detectionsRoutes from "./src/routes/detections.routes.js";
-import analysisRoutes from "./src/routes/analysis.routes.js";
-
 app.use(`/api${config.apiPrefix}/auth`, authRoutes);
 app.use(`/api${config.apiPrefix}/detections`, detectionsRoutes);
 app.use(`/api${config.apiPrefix}/analysis`, analysisRoutes);
@@ -84,7 +81,7 @@ app.use(`/api${config.apiPrefix}/analysis`, analysisRoutes);
 /* =========================
    START SERVER
 ========================= */
-const PORT = process.env.PORT || 3000; // Railway standard fallback is usually 3000 or 8080
-httpServer.listen(PORT, () => {
+const PORT = process.env.PORT || 5000;
+httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server is UP and listening on PORT: ${PORT}`);
 });
