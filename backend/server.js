@@ -8,6 +8,10 @@ import { setupMqtt } from "./mqttHandler.js";
 
 const app = express();
 
+app.get("/", (req, res) => {
+    res.json({ status: "Backend SiTani Smart is Running! 🚀" });
+});
+
 const allowedOrigins = [
     "https://dashboard-hama.vercel.app",
     "https://dahsboard-hama.vercel.app",
