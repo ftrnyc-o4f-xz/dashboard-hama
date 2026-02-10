@@ -16,6 +16,9 @@ app.use(cors({
     credentials: true
 }));
 
+// Pre-flight OPTIONS handler using Regex (Safe for Node 22)
+app.options(/.*/, cors());
+
 app.use(express.json());
 
 /* =========================
@@ -52,6 +55,6 @@ app.use(`/api${config.apiPrefix}/analysis`, analysisRoutes);
    START SERVER
 ========================= */
 const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
