@@ -8,25 +8,23 @@ import { setupMqtt } from "./mqttHandler.js";
 
 const app = express();
 
-app.get("/", (req, res) => {
-    res.json({ status: "Backend SiTani Smart is Running! 🚀" });
-});
-
 const allowedOrigins = [
     "https://dashboard-hama.vercel.app",
     "https://dahsboard-hama.vercel.app",
     "http://localhost:5173"
 ];
 
+// 1. PINDAHKAN CORS KE PALING ATAS
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    console.log(`[${req.method}] ${req.url} - Origin: ${origin}`);
+    console.log(`>>> [${req.method}] ${req.url} | Origin: ${origin}`);
 
+    // Refleksikan origin jika ada dalam daftar atau dari vercel
     if (origin && (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app") || origin.includes("localhost"))) {
         res.setHeader("Access-Control-Allow-Origin", origin);
     } else {
-        // Fallback ke domain utama, jangan pakai '*' karena credentials: true
-        res.setHeader("Access-Control-Allow-Origin", "https://dashboard-hama.vercel.app");
+        // Jika tidak ada origin, tetap beri header agar tidak diblokir browser
+        res.setHeader("Access-Control-Allow-Origin", origin || "*");
     }
 
     res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -37,6 +35,11 @@ app.use((req, res, next) => {
         return res.status(200).end();
     }
     next();
+});
+
+// 2. HEALTH CHECK DI BAWAH CORS
+app.get("/", (req, res) => {
+    res.json({ status: "Backend SiTani Smart is Running! 🚀" });
 });
 
 app.use(express.json());
