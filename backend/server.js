@@ -8,25 +8,15 @@ import { setupMqtt } from "./mqttHandler.js";
 import authRoutes from "./src/routes/auth.routes.js";
 import detectionsRoutes from "./src/routes/detections.routes.js";
 import analysisRoutes from "./src/routes/analysis.routes.js";
+import User from "./src/models/user.model.js";
+import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 
 const app = express();
 
-// 1. Forceful CORS & Preflight Handler
+// 1. ULTRA PERMISSIVE CORS (The most aggressive fix)
 app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    const allowedOrigins = [
-        "https://dashboard-hama.vercel.app",
-        "https://dahsboard-hama.vercel.app",
-        "http://localhost:5173",
-        "http://localhost:3000"
-    ];
-
-    if (origin && (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app") || origin.includes("localhost"))) {
-        res.header("Access-Control-Allow-Origin", origin);
-    } else {
-        res.header("Access-Control-Allow-Origin", "*");
-    }
-
+    res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Credentials", "true");
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, X-Requested-With, token");
@@ -37,35 +27,33 @@ app.use((req, res, next) => {
     next();
 });
 
-// 2. Request Logger (Helpful for debugging)
+// 2. Body Parser
+app.use(express.json());
+
+// 3. Request Logger
 app.use((req, res, next) => {
     console.log(`>>> [${req.method}] ${req.url} | Origin: ${req.headers.origin}`);
     next();
 });
 
-// 3. Body Parser
-app.use(express.json());
-
 // 4. Health Check
 app.get("/", (req, res) => {
-    res.json({ status: "Backend SiTani Smart is Running! 🚀", timestamp: new Date() });
+    res.json({
+        status: "Backend SiTani Smart is Running! 🚀",
+        db: mongoose.connection.readyState === 1 ? "Connected ✅" : "Disconnected ❌",
+        timestamp: new Date()
+    });
 });
 
 
 /* =========================
    HTTP + SOCKET SERVER
-========================= */
+ ========================= */
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
     cors: {
-        origin: (origin, callback) => {
-            if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
-                callback(null, true);
-            } else {
-                callback(null, true);
-            }
-        },
+        origin: "*",
         methods: ["GET", "POST"],
         credentials: true
     },
@@ -73,14 +61,34 @@ const io = new Server(httpServer, {
 });
 
 /* =========================
-   DATABASE & MQTT
-========================= */
-connectDB();
+   DATABASE & AUTO-ADMIN
+ ========================= */
+connectDB().then(async () => {
+    console.log("🛠️  Checking Admin User...");
+    try {
+        const adminExists = await User.findOne({ username: "admin" });
+        if (!adminExists) {
+            const hashedPassword = await bcrypt.hash("admin123", 10);
+            await User.create({
+                username: "admin",
+                email: "admin@sitani.com",
+                password: hashedPassword,
+                role: "admin"
+            });
+            console.log("✅ AUTO-ADMIN CREATED: admin / admin123");
+        } else {
+            console.log("ℹ️  Admin user already exists.");
+        }
+    } catch (err) {
+        console.error("❌ Failed to check/create admin:", err.message);
+    }
+});
+
 setupMqtt(io);
 
 /* =========================
    ROUTES
-========================= */
+ ========================= */
 app.use(`/api${config.apiPrefix}/auth`, authRoutes);
 app.use(`/api${config.apiPrefix}/detections`, detectionsRoutes);
 app.use(`/api${config.apiPrefix}/analysis`, analysisRoutes);
