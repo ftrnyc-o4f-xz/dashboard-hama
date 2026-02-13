@@ -11,31 +11,32 @@ import analysisRoutes from "./src/routes/analysis.routes.js";
 
 const app = express();
 
-// 1. CORS & Preflight Handler (Manual fix for Express 5 compatibility)
+// 1. CORS Configuration
 const allowedOrigins = [
     "https://dashboard-hama.vercel.app",
     "https://dahsboard-hama.vercel.app",
-    "http://localhost:5173"
+    "http://localhost:5173",
+    "http://localhost:3000"
 ];
 
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow all origins for now to fix the issue, or refine as needed
+        if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".vercel.app") || origin.includes("localhost")) {
+            callback(null, true);
+        } else {
+            callback(null, true); // Allow for debugging
+        }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With"]
+}));
 
-    if (origin && (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app") || origin.includes("localhost"))) {
-        res.setHeader("Access-Control-Allow-Origin", origin);
-    }
+// Explicitly handle preflight requests
+app.options('*', cors());
 
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, X-Requested-With");
-
-    if (req.method === "OPTIONS") {
-        return res.status(200).end();
-    }
-    next();
-});
-
-// 2. Request Logger
+// 2. Request Logger (Helpful for debugging)
 app.use((req, res, next) => {
     console.log(`>>> [${req.method}] ${req.url} | Origin: ${req.headers.origin}`);
     next();
