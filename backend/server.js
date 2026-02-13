@@ -34,7 +34,7 @@ app.use(cors({
 }));
 
 // Explicitly handle preflight requests
-app.options('*', cors());
+app.options('(.*)', cors());
 
 // 2. Request Logger (Helpful for debugging)
 app.use((req, res, next) => {
